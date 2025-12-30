@@ -1,0 +1,319 @@
+@extends('layouts.front-app')
+@section('title')
+{{Auth::user()->access[Route::current()->action["as"]]["user_type"]}} - Disciplinary Management
+@endsection
+
+@section('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endsection
+
+@section('content')
+<div class="page-wrapper">
+    <div class="content container-fluid" style="max-width: 100%; padding-left: 50px; padding-right: 30px;">
+        <div class="row">
+            <div class="col-md-12">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            @endif
+
+            @if(Auth::user()->role_id != 2)
+            <div class="card mb-4">
+                <div class="card-header">
+                    {{ __('Create Disciplinary Note') }}
+                </div>
+
+                <div class="card-body">
+                    <form action="{{ route('disciplinary.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="form-group row">
+                            <label for="employee_id" class="col-md-2 col-form-label">{{ __('Employee') }}</label>
+                            <div class="col-md-10">
+                                <select name="employee_id" id="employee_id" class="form-control @error('employee_id') is-invalid @enderror select2-search" required>
+                                    <option value="">Select Employee</option>
+                                    @foreach($employees as $employee)
+                                        <option value="{{ $employee->id }}">{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('employee_id')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="case_details" class="col-md-2 col-form-label">{{ __('Disciplinary Case') }}</label>
+                            <div class="col-md-10">
+                                <input type="text" name="case_details" id="case_details" class="form-control @error('case_details') is-invalid @enderror" required>
+                                @error('case_details')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="remarks" class="col-md-2 col-form-label">{{ __('Remarks') }}</label>
+                            <div class="col-md-10">
+                                <textarea name="remarks" id="remarks" rows="3" class="form-control @error('remarks') is-invalid @enderror" required></textarea>
+                                @error('remarks')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="date_served" class="col-md-2 col-form-label">{{ __('Date Served') }}</label>
+                            <div class="col-md-10">
+                                <input type="date" name="date_served" id="date_served" class="form-control @error('date_served') is-invalid @enderror" required>
+                                @error('date_served')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="sanction" class="col-md-2 col-form-label">{{ __('Sanction') }}</label>
+                            <div class="col-md-10">
+                                <select name="sanction" id="sanction" class="form-control @error('sanction') is-invalid @enderror">
+                                    <option value="">Select Sanction </option>
+                                    <option value="1st_reprimand">1st Reprimand</option>
+                                    <option value="2nd_reprimand">2nd Reprimand</option>
+                                    <option value="3rd_reprimand">3rd Reprimand</option>
+                                    <option value="final_reprimand">Final Reprimand</option>
+                                    <option value="1day_suspension">1 Day Suspension</option>
+                                    <option value="3day_suspension">3 Day Suspension</option>
+                                    <option value="5day_suspension">5 Day Suspension</option>
+                                    <option value="7day_suspension">7 Day Suspension</option>
+                                    <option value="15day_suspension">15 Day Suspension</option>
+                                    <option value="30day_suspension">30 Day Suspension</option>
+                                    <option value="30day_preventive_suspension">30 Day Preventive Suspension</option>
+                                    <option value="termination">For Termination</option>
+                                 
+                                </select>
+                                @error('sanction')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="attachment" class="col-md-2 col-form-label">{{ __('Attachment') }}</label>
+                            <div class="col-md-10">
+                                <input type="file" name="attachment" id="attachment" class="form-control-file @error('attachment') is-invalid @enderror">
+                                <p>All Files Attach Have Been Approve</p>
+                                @error('attachment')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="form-group row mb-0">
+                            <div class="col-md-10 offset-md-2">
+                                <button type="submit" class="btn btn-primary">
+                                    {{ __('Create Disciplinary Note') }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
+
+            <div class="card oth_income_card">
+                <div class="card-header" style="background-color: #2f47ba;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="card-titles" style="color: white; margin: 0;">{{ __('Disciplinary Notes') }}</h2>
+                        <form action="{{ route('disciplinary.export') }}" method="POST" style="display:inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-sm-12 col-12">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xl-12 col-sm-12 col-12 table-responsive">
+                                    <table class="table table-striped table-bordered table-hover" id="tbl_disciplinary_list">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee</th>
+                                                <th>Case Details</th>
+                                                <th>Remarks</th>
+                                                <th>Date Served</th>
+                                                <th>Sanction</th>
+                                                <th width="120px">Attachment</th>
+                                                <th width="150px">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($disciplinaryNotes as $note)
+                                                <tr>
+                                                    <td>{{ $note->employee->first_name }} {{ $note->employee->last_name }}</td>
+                                                    <td>{{ \Str::limit($note->case_details, 50) }}</td>
+                                                    <td>{{ \Str::limit($note->remarks, 60) }}</td>
+                                                    <td>{{ $note->date_served->format('M d, Y') }}</td>
+                                                    <td>
+                                                        @if($note->sanction)
+                                                            <span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $note->sanction)) }}</span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($note->attachment_path)
+                                                            <a href="{{ asset($note->attachment_path) }}" target="_blank" class="btn btn-sm btn-success">View</a>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#disciplinaryViewModal-{{ $note->id }}">
+                                                            <i class="fas fa-eye"></i> View
+                                                        <!-- </button>
+                                                        @if(Auth::user()->role_id == 1)
+                                                            <button class="btn btn-sm btn-danger" data-toggle="modal" data-target="#disciplinaryDeleteModal-{{ $note->id }}">
+                                                                <i class="fas fa-trash"></i> Delete
+                                                            </button>
+                                                        @endif -->
+                                                    </td>
+                                                </tr>
+
+                                                <!-- View Modal -->
+                                                <div class="modal fade" id="disciplinaryViewModal-{{ $note->id }}" tabindex="-1" role="dialog">
+                                                  <div class="modal-dialog modal-lg" role="document">
+                                                    <div class="modal-content">
+                                                      <div class="modal-header" style="background-color:#2f47ba;color:white;">
+                                                        <h5 class="modal-title">Disciplinary Note Details</h5>
+                                                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                                                      </div>
+                                                      <div class="modal-body">
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-6">
+                                                                <h6 class="font-weight-bold">Employee:</h6>
+                                                                <p class="text-muted">{{ $note->employee->first_name }} {{ $note->employee->last_name }}</p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <h6 class="font-weight-bold">Date Served:</h6>
+                                                                <p class="text-muted">{{ $note->date_served->format('F d, Y') }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <h6 class="font-weight-bold">Case Details:</h6>
+                                                            <p class="text-muted">{{ $note->case_details }}</p>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <h6 class="font-weight-bold">Remarks:</h6>
+                                                            <p class="text-muted">{{ $note->remarks }}</p>
+                                                        </div>
+                                                        @if($note->sanction)
+                                                        <div class="mb-3">
+                                                            <h6 class="font-weight-bold">Sanction:</h6>
+                                                            <p class="text-muted"><span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $note->sanction)) }}</span></p>
+                                                        </div>
+                                                        @endif
+                                                        @if($note->attachment_path)
+                                                        <div class="mb-3">
+                                                            <h6 class="font-weight-bold">Attachment:</h6>
+                                                            <a href="{{ asset($note->attachment_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-download"></i> Download Attachment
+                                                            </a>
+                                                        </div>
+                                                        @endif
+                                                      </div>
+                                                      <div class="modal-footer">
+                                                        <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+
+                                                <!-- Delete Modal for Admin -->
+                                                @if(Auth::user()->role_id == 1)
+                                                <div class="modal fade" id="disciplinaryDeleteModal-{{ $note->id }}" tabindex="-1" role="dialog">
+                                                  <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                      <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title">Confirm Delete</h5>
+                                                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                                                      </div>
+                                                      <form action="{{ route('disciplinary.delete', $note->id) }}" method="POST">
+                                                      @csrf
+                                                      @method('DELETE')
+                                                      <div class="modal-body">
+                                                        <p>Are you sure you want to delete this disciplinary note?</p>
+                                                        <div class="alert alert-warning">
+                                                            <strong>Employee:</strong> {{ $note->employee->first_name }} {{ $note->employee->last_name }}<br>
+                                                            <strong>Case:</strong> {{ \Str::limit($note->case_details, 50) }}<br>
+                                                            <strong>Date:</strong> {{ $note->date_served->format('M d, Y') }}
+                                                        </div>
+                                                        <p class="text-danger"><strong>Warning:</strong> This action cannot be undone. All replies to this disciplinary note will also be deleted.</p>
+                                                      </div>
+                                                      <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger">Delete Note</button>
+                                                      </div>
+                                                      </form>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                @endif
+                                            @empty
+                                                <tr>
+                                                    <td colspan="6" class="text-center">No disciplinary notes found.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+	$(document).ready(function() {
+		$('.select2-search').select2({
+			placeholder: 'Search and select an employee',
+			allowClear: true,
+			width: '100%'
+		});
+	});
+</script>
+@endsection
+</div>
