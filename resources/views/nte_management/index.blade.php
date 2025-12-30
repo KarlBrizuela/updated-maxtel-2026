@@ -132,7 +132,7 @@
 						<select name="employee_id" class="form-control select2-search" required>
 							<option value="">Select employee</option>
 							@foreach($employees as $employee)
-								<option value="{{ $employee->id }}">{{ $employee->first_name }} {{ $employee->last_name }}</option>
+								<option value="{{ $employee->id }}" @if(request('employee_id') && request('employee_id') == $employee->id) selected @endif>{{ $employee->first_name }} {{ $employee->last_name }}</option>
 							@endforeach
 						</select>
 					</div>

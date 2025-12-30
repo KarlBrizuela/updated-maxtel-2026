@@ -607,6 +607,7 @@ Route::post('delete_personnel_action', [PersonnelActionController::class, 'delet
 Route::get('incident-report', [IncidentReportController::class, 'index'])->middleware(['auth'])->name('incident-report.index');
 Route::post('incident-report', [IncidentReportController::class, 'store'])->middleware(['auth'])->name('incident-report.store');
 Route::get('incident-report/create', [IncidentReportController::class, 'create'])->middleware(['auth'])->name('incident-report.create');
+Route::get('api/next-incident-number', [IncidentReportController::class, 'getNextIncidentNumber'])->middleware(['auth']);
 Route::get('incident-report/{id}', [IncidentReportController::class, 'show'])->middleware(['auth'])->name('incident-report.show');
 Route::get('incident-report/{id}/edit', [IncidentReportController::class, 'edit'])->middleware(['auth'])->name('incident-report.edit');
 Route::put('incident-report/{id}', [IncidentReportController::class, 'update'])->middleware(['auth'])->name('incident-report.update');
@@ -615,6 +616,13 @@ Route::post('delete_incident_report', [IncidentReportController::class, 'destroy
 
 // Alias for backwards compatibility with database
 Route::get('incident_report', [IncidentReportController::class, 'index'])->middleware(['auth'])->name('incident_report');
+
+// NTE Notes
+Route::get('nte-note', [NteNoteController::class, 'index'])->middleware(['auth'])->name('nte-note.index');
+Route::post('nte-note', [NteNoteController::class, 'store'])->middleware(['auth'])->name('nte-note.store');
+Route::get('nte-note/create', [NteNoteController::class, 'create'])->middleware(['auth'])->name('nte-note.create');
+Route::get('nte-note/{id}', [NteNoteController::class, 'show'])->middleware(['auth'])->name('nte-note.show');
+Route::delete('nte-note/{id}', [NteNoteController::class, 'destroy'])->middleware(['auth'])->name('nte-note.destroy');
 
 // Unlisted Locations
 Route::get('unlisted_locations', [UnlistedLocationsController::class, 'index'])->middleware(['auth'])->name('unlisted_locations');

@@ -30,9 +30,9 @@
                                         required
                                     >
                                         <option value="">-- Select Employee --</option>
-                                        @forelse($employees ?? [] as $employee)
-                                            <option value="{{ $employee->id }}" data-position="{{ $employee->position_name }}">
-                                                {{ $employee->emp_code }} - {{ $employee->first_name }} {{ $employee->last_name }}
+                                        @forelse($employees ?? [] as $emp)
+                                            <option value="{{ $emp->id }}" data-position="{{ $emp->position_name }}" @if($employee && $employee->id == $emp->id) selected @endif>
+                                                {{ $emp->emp_code }} - {{ $emp->first_name }} {{ $emp->last_name }}
                                             </option>
                                         @empty
                                             <option value="">No employees available</option>
@@ -49,6 +49,7 @@
                                         id="position" 
                                         name="position" 
                                         class="form-control"
+                                        value="@if($employee && isset($employee->position_name)){{ $employee->position_name }}@endif"
                                         required
                                     >
                                 </div>
@@ -78,8 +79,8 @@
                                         id="incident_no" 
                                         name="incident_no" 
                                         class="form-control"
-                                        placeholder="Enter incident number"
-                                        required
+                                        placeholder="Auto-generated"
+                                        readonly
                                     >
                                 </div>
                             </div>
@@ -232,6 +233,7 @@
                                     <th>Incident Type</th>
                                     <th>Date of Incident</th>
                                     <th>Location</th>
+                                    <th>Sanction</th>
                                     <th>Report Date</th>
                                     <th>Action</th>
                                 </tr>
@@ -244,12 +246,22 @@
                                         <td>{{ $report->incident_type ?? 'N/A' }}</td>
                                         <td>{{ $report->date_incident ? date('M d, Y H:i', strtotime($report->date_incident)) : 'N/A' }}</td>
                                         <td>{{ $report->location ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($report->disciplinaryNote && $report->disciplinaryNote->sanction)
+                                                <span class="badge badge-info">{{ ucfirst(str_replace('_', ' ', $report->disciplinaryNote->sanction)) }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $report->date_time_report ? date('M d, Y H:i', strtotime($report->date_time_report)) : 'N/A' }}</td>
                                         <td>
                                             <button class="btn btn-sm btn-info" onclick="viewReport('{{ $report->id }}')" title="View">
                                                 <i class="fa fa-eye"></i>
                                             </button>
                                             @if(!$isReadOnly)
+                                                <a href="{{ route('nte_management', ['incident_id' => $report->id, 'employee_id' => $report->reported_by]) }}" class="btn btn-sm btn-success" title="Add NTE">
+                                                    <i class="fa fa-plus"></i> NTE
+                                                </a>
                                                 <button class="btn btn-sm btn-danger" onclick="deleteReport('{{ $report->id }}')" title="Delete">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
@@ -424,7 +436,22 @@
             const position = selectedOption.data('position');
             $('#position').val(position || '');
         });
+
+        // Generate incident number on form load
+        generateIncidentNumber();
     });
+
+    function generateIncidentNumber() {
+        // Generate format: INC-YYYYMMDD-NNNN (where NNNN is a random 4-digit number)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const randomNum = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+        
+        const incidentNo = `INC-${year}${month}${day}-${randomNum}`;
+        $('#incident_no').val(incidentNo);
+    }
 
     function viewReport(reportId) {
         // Fetch report details via AJAX

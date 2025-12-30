@@ -166,6 +166,7 @@
                                             <tr>
                                                 <th>Employee</th>
                                                 <th>Case Details</th>
+                                                <th>Incident #</th>
                                                 <th>Remarks</th>
                                                 <th>Date Served</th>
                                                 <th>Sanction</th>
@@ -178,6 +179,19 @@
                                                 <tr>
                                                     <td>{{ $note->employee->first_name }} {{ $note->employee->last_name }}</td>
                                                     <td>{{ \Str::limit($note->case_details, 50) }}</td>
+                                                    <td>
+                                                        @php
+                                                            // Try to find incident report for this employee
+                                                            $incidentReport = \App\Models\IncidentReport::where('reported_by', $note->employee_id)->latest()->first();
+                                                        @endphp
+                                                        @if($incidentReport)
+                                                            <a href="javascript:void(0)" onclick="viewIncidentReport({{ $incidentReport->id }})" class="badge badge-primary" style="cursor: pointer; font-size: 0.85em;">
+                                                                {{ $incidentReport->incident_no ?? '#' . $incidentReport->id }}
+                                                            </a>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ \Str::limit($note->remarks, 60) }}</td>
                                                     <td>{{ $note->date_served->format('M d, Y') }}</td>
                                                     <td>
@@ -197,8 +211,11 @@
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#disciplinaryViewModal-{{ $note->id }}">
                                                             <i class="fas fa-eye"></i> View
-                                                        <!-- </button>
-                                                        @if(Auth::user()->role_id == 1)
+                                                        </button>
+                                                        <a href="{{ route('incident-report.create', ['disciplinary_id' => $note->id, 'employee_id' => $note->employee_id]) }}" class="btn btn-sm btn-warning">
+                                                            <i class="fas fa-plus"></i> Add IR
+                                                        </a>
+                                                        <!-- @if(Auth::user()->role_id == 1)
                                                             <button class="btn btn-sm btn-danger" data-toggle="modal" data-target="#disciplinaryDeleteModal-{{ $note->id }}">
                                                                 <i class="fas fa-trash"></i> Delete
                                                             </button>
@@ -301,10 +318,73 @@
         </div>
     </div>
 </div>
+
+<!-- Incident Report Modal -->
+<div class="modal fade" id="incidentReportModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:#2f47ba;color:white;">
+                <h5 class="modal-title">Incident Report Details</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Incident #:</h6>
+                        <p id="modalIncidentNo">N/A</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Reported By:</h6>
+                        <p id="modalReportedBy">N/A</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Incident Type:</h6>
+                        <p id="modalIncidentType">N/A</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Date of Incident:</h6>
+                        <p id="modalDateIncident">N/A</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6 class="font-weight-bold">Location:</h6>
+                        <p id="modalLocation">N/A</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6 class="font-weight-bold">Incident Description:</h6>
+                    <p id="modalIncidentDescription" style="white-space: pre-wrap;">N/A</p>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Involved Employee:</h6>
+                        <p id="modalNameInvolved">N/A</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Witness:</h6>
+                        <p id="modalNameWitness">N/A</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6 class="font-weight-bold">Recommended Action:</h6>
+                    <p id="modalRecommendedAction" style="white-space: pre-wrap;">N/A</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 	$(document).ready(function() {
@@ -314,6 +394,40 @@
 			width: '100%'
 		});
 	});
+
+	function viewIncidentReport(reportId) {
+		// Fetch report details via AJAX
+		console.log('Fetching incident report:', reportId);
+		$.ajax({
+			url: "/incident-report/" + reportId,
+			type: "GET",
+			headers: {
+				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+			},
+			dataType: 'json',
+			success: function(response) {
+				console.log('Response received:', response);
+				// Populate modal with report details
+				$('#modalIncidentNo').text(response.incident_no || 'N/A');
+				$('#modalReportedBy').text(response.reported_by_name || 'N/A');
+				$('#modalIncidentType').text(response.incident_type || 'N/A');
+				$('#modalDateIncident').text(response.date_incident ? new Date(response.date_incident).toLocaleString() : 'N/A');
+				$('#modalLocation').text(response.location || 'N/A');
+				$('#modalIncidentDescription').text(response.incident_description || 'N/A');
+				$('#modalNameInvolved').text(response.name_involved_name || 'N/A');
+				$('#modalNameWitness').text(response.name_witness_name || 'N/A');
+				$('#modalRecommendedAction').text(response.recommended_action || 'N/A');
+				
+				// Show the modal
+				$('#incidentReportModal').modal('show');
+			},
+			error: function(xhr, status, error) {
+				console.error("Error:", error);
+				console.error("Status:", status);
+				console.error("Response:", xhr.responseText);
+				alert('Error loading incident report details. Please try again.');
+			}
+		});
+	}
 </script>
 @endsection
-</div>

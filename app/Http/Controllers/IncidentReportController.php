@@ -23,11 +23,10 @@ class IncidentReportController extends Controller
         $isReadOnly = $userPermission === '3' || (preg_match("/R/i", $userPermission ?? '') && !preg_match("/C|U/i", $userPermission ?? ''));
         
         $role_id = Auth::user()->role_id;
+        $employee = null;
         
         // Filter employees based on role-based group management
-        $query = Employee::leftJoin('lib_position', 'tbl_employee.position_id', '=', 'lib_position.id')
-            ->select('tbl_employee.id', 'tbl_employee.emp_code', 'tbl_employee.first_name', 'tbl_employee.last_name', 'lib_position.name as position_name')
-            ->where('tbl_employee.is_active', 1);
+        $query = Employee::where('tbl_employee.is_active', 1);
         
         if ($role_id === 1) {
             // Admin sees all employees
@@ -57,6 +56,22 @@ class IncidentReportController extends Controller
             $employees = $query->where("tbl_employee.user_id", Auth::user()->id)->get();
         }
         
+        // Get position names for all employees
+        foreach ($employees as $emp) {
+            if ($emp->position_id) {
+                try {
+                    $position = \DB::connection('intra_payroll')->table('lib_position')
+                        ->where('id', (int)$emp->position_id)
+                        ->value('name');
+                    if ($position) {
+                        $emp->position_name = $position;
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail
+                }
+            }
+        }
+        
         // Get current user's employee record
         $currentEmployeeId = null;
         if (Auth::check()) {
@@ -68,7 +83,7 @@ class IncidentReportController extends Controller
         if ($isReadOnly && $currentEmployeeId) {
             // Staff sees only their own reports
             $myIncidentReports = IncidentReport::where('reported_by', $currentEmployeeId)
-                ->with(['reportedByEmployee', 'involvedEmployee', 'witnessEmployee'])
+                ->with(['reportedByEmployee', 'involvedEmployee', 'witnessEmployee', 'disciplinaryNote'])
                 ->orderBy('date_time_report', 'desc')
                 ->get();
             $incidentReports = collect();
@@ -76,7 +91,7 @@ class IncidentReportController extends Controller
             // Admin/Manager sees reports for employees in their managed groups
             $myIncidentReports = collect();
             
-            $reportQuery = IncidentReport::with(['reportedByEmployee', 'involvedEmployee', 'witnessEmployee']);
+            $reportQuery = IncidentReport::with(['reportedByEmployee', 'involvedEmployee', 'witnessEmployee', 'disciplinaryNote']);
             
             // Filter by role-based groups
             if ($role_id === 1) {
@@ -117,15 +132,82 @@ class IncidentReportController extends Controller
             }
         }
         
-        return view('incident_report.index', compact('employees', 'isReadOnly', 'incidentReports', 'myIncidentReports'));
+        return view('incident_report.index', compact('employees', 'isReadOnly', 'incidentReports', 'myIncidentReports', 'employee'));
     }
 
     /**
      * Show the form for creating a new incident report.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('incident_report.create');
+        $employee = null;
+        $employees = [];
+        
+        // Get employee list for dropdown
+        $role_id = Auth::user()->role_id;
+        $query = Employee::where('tbl_employee.is_active', 1);
+        
+        if ($role_id === 1) {
+            $employees = $query->get();
+        } elseif ($role_id === 4) {
+            $employees = $query->where(function ($q) {
+                $q->where("tbl_employee.hr_group", "group_d")
+                ->orWhere("tbl_employee.user_id", Auth::user()->id);
+            })->get();
+        } elseif ($role_id === 5) {
+            $employees = $query->where(function ($q) {
+                $q->whereIn("tbl_employee.hr_group", ["group_b","group_c","group_e"])
+                ->orWhere("tbl_employee.user_id", Auth::user()->id);
+            })->get();
+        } elseif ($role_id === 14) {
+            $employees = $query->where(function ($q) {
+                $q->whereIn("tbl_employee.hr_group", ["group_b","group_c"])
+                ->orWhere("tbl_employee.user_id", Auth::user()->id);
+            })->get();
+        } elseif ($role_id === 15) {
+            $employees = $query->where(function ($q) {
+                $q->whereIn("tbl_employee.hr_group", ["group_c","group_e"])
+                ->orWhere("tbl_employee.user_id", Auth::user()->id);
+            })->get();
+        } else {
+            $employees = $query->where("tbl_employee.user_id", Auth::user()->id)->get();
+        }
+        
+        // If employee_id is provided via query parameter, fetch and set it
+        if ($request->has('employee_id') && $request->employee_id) {
+            $employee = Employee::find($request->employee_id);
+            // Get position name if position_id exists
+            if ($employee && $employee->position_id) {
+                try {
+                    $position = \DB::connection('intra_payroll')->table('lib_position')
+                        ->where('id', (int)$employee->position_id)
+                        ->value('name');
+                    if ($position) {
+                        $employee->position_name = $position;
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail if position lookup fails
+                }
+            }
+        }
+        
+        // Get position names for all employees
+        foreach ($employees as $emp) {
+            if ($emp->position_id) {
+                try {
+                    $position = \DB::connection('intra_payroll')->table('lib_position')
+                        ->where('id', (int)$emp->position_id)
+                        ->value('name');
+                    if ($position) {
+                        $emp->position_name = $position;
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail
+                }
+            }
+        }
+        
+        return view('incident_report.create', compact('employees', 'employee'));
     }
 
     /**
@@ -145,6 +227,7 @@ class IncidentReportController extends Controller
             'name_involved' => 'required|integer',
             'name_witness' => 'nullable|integer',
             'recommended_action' => 'required|string',
+            'disciplinary_note_id' => 'nullable|integer|exists:disciplinary_notes,id',
         ]);
 
         // Create the incident report
@@ -158,7 +241,7 @@ class IncidentReportController extends Controller
      */
     public function show($id)
     {
-        $report = IncidentReport::with(['reportedByEmployee', 'involvedEmployee', 'witnessEmployee'])
+        $report = IncidentReport::with(['reportedByEmployee', 'involvedEmployee', 'witnessEmployee', 'disciplinaryNote'])
             ->findOrFail($id);
         
         return response()->json([

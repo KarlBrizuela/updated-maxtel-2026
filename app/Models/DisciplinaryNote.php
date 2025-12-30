@@ -43,4 +43,10 @@ class DisciplinaryNote extends Model
     {
         return $this->belongsTo(DisciplinaryNote::class, 'parent_id', 'id');
     }
+
+    // Get the linked incident report
+    public function incidentReport()
+    {
+        return $this->hasOne(IncidentReport::class, 'disciplinary_note_id', 'id');
+    }
 }

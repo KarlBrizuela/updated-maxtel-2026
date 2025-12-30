@@ -21,6 +21,7 @@ class IncidentReport extends Model
         'name_involved',
         'name_witness',
         'recommended_action',
+        'disciplinary_note_id',
     ];
 
     protected $casts = [
@@ -42,5 +43,11 @@ class IncidentReport extends Model
     public function witnessEmployee()
     {
         return $this->belongsTo(Employee::class, 'name_witness', 'id');
+    }
+
+    // Link to disciplinary note
+    public function disciplinaryNote()
+    {
+        return $this->belongsTo(DisciplinaryNote::class, 'disciplinary_note_id', 'id');
     }
 }
