@@ -149,9 +149,17 @@
 							<input type="date" name="date_served" class="form-control" required>
 						</div>
 						<div class="form-group">
-							<label>Attachment</label>
-							<input type="file" name="attachment" class="form-control-file">
-							<p>All Files Attach Have Been Approve</p>
+						<label>Due Date for Submission</label>
+						<input type="date" name="due_date" class="form-control">
+					</div>
+					<div class="form-group">
+						<label>Attachment</label>
+						<input type="file" name="attachment" class="form-control-file">
+						<p>All Files Attach Have Been Approve</p>
+					</div>
+					<div class="form-group">
+						<label>Resolution</label>
+						<textarea name="resolution" class="form-control" rows="3" placeholder="Enter resolution details (optional)"></textarea>
 						</div>
 						<button class="btn btn-success">Create NTE</button>
 					</form>
@@ -179,31 +187,33 @@
 								<thead>
 									<tr>
 										<th style="width: 15%;">Employee</th>
-										<th style="width: 25%;">Case</th>
-										<th style="width: 30%;">Remarks</th>
-								<th style="width: 10%;">Date</th>
-								<th style="width: 10%;">Attachment</th>
-								<th style="width: 10%;">Actions</th>
-							</tr>
-						</thead>
+										<th style="width: 20%;">Case</th>
+										<th style="width: 20%;">Remarks</th>
+										<th style="width: 8%;">Date Served</th>
+										<th style="width: 8%;">Due Date</th>
+										<th style="width: 8%;">Attachment</th>
+										<th style="width: 10%;">Actions</th>
+									</tr>
+								</thead>
 						<tbody>
 							@forelse($nteNotes as $note)
 							<tr>
 								<td>{{ $note->employee ? $note->employee->first_name . ' ' . $note->employee->last_name : 'N/A' }}</td>
 								<td>{{ Str::limit($note->case_details, 50) }}</td>
 								<td>{{ Str::limit($note->remarks, 60) }}</td>
-							<td>{{ $note->date_served->format('M d, Y') }}</td>
-							<td>
-								@if($note->attachment_path)
-									<a href="{{ asset_with_env($note->attachment_path) }}" target="_blank" class="btn btn-sm btn-success">View</a>
-								@endif
-							</td>
-						<td>
-							<button class="btn btn-sm btn-info" data-toggle="modal" data-target="#nteViewModal-{{ $note->id }}">
-								<i class="fas fa-eye"></i> View @if($note->replies && $note->replies->count() > 0)({{ $note->replies->count() }})@endif
-							</button>
-							@if(Auth::user()->role_id != 1)
-								<button class="btn btn-sm btn-success" data-toggle="modal" data-target="#nteReplyModalTable-{{ $note->id }}">Reply</button>
+								<td>{{ $note->date_served->format('M d, Y') }}</td>
+								<td>{{ $note->due_date ? $note->due_date->format('M d, Y') : '-' }}</td>
+								<td>
+									@if($note->attachment_path)
+										<a href="{{ asset_with_env($note->attachment_path) }}" target="_blank" class="btn btn-sm btn-success">View</a>
+									@endif
+								</td>
+								<td>
+									<button class="btn btn-sm btn-info" data-toggle="modal" data-target="#nteViewModal-{{ $note->id }}">
+										<i class="fas fa-eye"></i> View @if($note->replies && $note->replies->count() > 0)({{ $note->replies->count() }})@endif
+									</button>
+									@if(Auth::user()->role_id != 1)
+										<button class="btn btn-sm btn-success" data-toggle="modal" data-target="#nteReplyModalTable-{{ $note->id }}">Reply</button>
 							@else
 								<button class="btn btn-sm btn-danger" data-toggle="modal" data-target="#nteDeleteModal-{{ $note->id }}">
 									<i class="fas fa-trash"></i> Delete
@@ -233,22 +243,28 @@
 										<p class="text-muted">{{ $note->date_served->format('F d, Y') }}</p>
 									</div>
 								</div>
-								<div class="mb-3">
-									<h6 class="font-weight-bold">Case Details:</h6>
-									<p class="text-muted">{{ $note->case_details }}</p>
+							<div class="row mb-3">
+								<div class="col-md-6">
+									<h6 class="font-weight-bold">Due Date for Submission:</h6>
+									<p class="text-muted">{{ $note->due_date ? $note->due_date->format('F d, Y') : 'N/A' }}</p>
 								</div>
-								<div class="mb-3">
-									<h6 class="font-weight-bold">Remarks:</h6>
-									<p class="text-muted">{{ $note->remarks }}</p>
-								</div>
-								@if($note->attachment_path)
-								<div class="mb-3">
-									<h6 class="font-weight-bold">Attachment:</h6>
-									<a href="{{ asset_with_env($note->attachment_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-										<i class="fas fa-download"></i> Download Attachment
-									</a>
-								</div>
-								@endif
+							</div>
+							<div class="mb-3">
+								<h6 class="font-weight-bold">Case Details:</h6>
+								<p class="text-muted">{{ $note->case_details }}</p>
+							</div>
+							<div class="mb-3">
+								<h6 class="font-weight-bold">Remarks:</h6>
+								<p class="text-muted">{{ $note->remarks }}</p>
+							</div>
+							@if($note->attachment_path)
+							<div class="mb-3">
+								<h6 class="font-weight-bold">Attachment:</h6>
+								<a href="{{ asset_with_env($note->attachment_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+									<i class="fas fa-download"></i> Download Attachment
+								</a>
+							</div>
+							@endif
 								
 								@if($note->replies && $note->replies->count() > 0)
 								<hr>
@@ -330,6 +346,12 @@
 										<p class="text-muted">{{ $note->date_served->format('F d, Y') }}</p>
 									</div>
 								</div>
+								<div class="row mb-3">
+									<div class="col-md-6">
+										<h6 class="font-weight-bold">Due Date for Submission:</h6>
+										<p class="text-muted">{{ $note->due_date ? $note->due_date->format('F d, Y') : 'N/A' }}</p>
+									</div>
+								</div>
 								<div class="mb-3">
 									<h6 class="font-weight-bold">Case Details:</h6>
 									<p class="text-muted">{{ $note->case_details }}</p>
@@ -338,6 +360,12 @@
 									<h6 class="font-weight-bold">Remarks:</h6>
 									<p class="text-muted">{{ $note->remarks }}</p>
 								</div>
+								@if($note->resolution)
+								<div class="mb-3">
+									<h6 class="font-weight-bold">Resolution:</h6>
+									<p class="text-muted">{{ $note->resolution }}</p>
+								</div>
+								@endif
 								@if($note->attachment_path)
 								<div class="mb-3">
 									<h6 class="font-weight-bold">Attachment:</h6>
