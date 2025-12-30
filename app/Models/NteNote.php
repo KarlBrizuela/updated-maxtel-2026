@@ -15,6 +15,7 @@ class NteNote extends Model
     // Cast date_served to Carbon instance
     protected $casts = [
         'date_served' => 'datetime',
+        'due_date' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

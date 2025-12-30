@@ -106,11 +106,16 @@ class NteController extends Controller
             'case_details' => 'required|string',
             'remarks' => 'required|string',
             'date_served' => 'required|date',
+            'due_date' => 'nullable|date',
             'attachment' => 'nullable|file|max:10240',
+            'resolution' => 'nullable|string',
         ]);
 
         $data = $request->except('attachment');
         $data['date_served'] = date('Y-m-d', strtotime($request->date_served));
+        if ($request->has('due_date') && $request->due_date) {
+            $data['due_date'] = date('Y-m-d', strtotime($request->due_date));
+        }
 
         $nte = new NteNote($data);
 

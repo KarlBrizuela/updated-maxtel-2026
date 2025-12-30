@@ -259,9 +259,9 @@
                                                 <i class="fa fa-eye"></i>
                                             </button>
                                             @if(!$isReadOnly)
-                                                <a href="{{ route('nte_management', ['incident_id' => $report->id, 'employee_id' => $report->reported_by]) }}" class="btn btn-sm btn-success" title="Add NTE">
+                                                <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#addNteModal-{{ $report->id }}" title="Add NTE">
                                                     <i class="fa fa-plus"></i> NTE
-                                                </a>
+                                                </button>
                                                 <button class="btn btn-sm btn-danger" onclick="deleteReport('{{ $report->id }}')" title="Delete">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
@@ -280,6 +280,118 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- NTE Modals for each report -->
+                @forelse($incidentReports ?? [] as $report)
+                    <div class="modal fade" id="addNteModal-{{ $report->id }}" tabindex="-1" role="dialog" aria-labelledby="addNteModalLabel-{{ $report->id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="addNteModalLabel-{{ $report->id }}">Create Notice to Explain (NTE)</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <form action="{{ route('nte.store') }}" method="POST" enctype="multipart/form-data">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <!-- Employee Name (Read-only) -->
+                                        <div class="form-group">
+                                            <label for="employee_name_{{ $report->id }}">Employee Name</label>
+                                            <input 
+                                                type="text" 
+                                                id="employee_name_{{ $report->id }}" 
+                                                class="form-control" 
+                                                value="{{ $report->reportedByEmployee ? $report->reportedByEmployee->first_name . ' ' . $report->reportedByEmployee->last_name : 'N/A' }}" 
+                                                readonly
+                                            >
+                                            <input type="hidden" name="employee_id" value="{{ $report->reported_by }}">
+                                        </div>
+
+                                        <!-- Case Details -->
+                                        <div class="form-group">
+                                            <label for="case_details_{{ $report->id }}">Case Details <span class="text-danger">*</span></label>
+                                            <input 
+                                                type="text" 
+                                                id="case_details_{{ $report->id }}" 
+                                                name="case_details" 
+                                                class="form-control" 
+                                                placeholder="Enter case details"
+                                                required
+                                            >
+                                        </div>
+
+                                        <!-- Remarks -->
+                                        <div class="form-group">
+                                            <label for="remarks_{{ $report->id }}">Remarks <span class="text-danger">*</span></label>
+                                            <textarea 
+                                                id="remarks_{{ $report->id }}" 
+                                                name="remarks" 
+                                                class="form-control" 
+                                                rows="3" 
+                                                placeholder="Enter remarks"
+                                                required
+                                            ></textarea>
+                                        </div>
+
+                                        <!-- Date Served -->
+                                        <div class="form-group">
+                                            <label for="date_served_{{ $report->id }}">Date Served <span class="text-danger">*</span></label>
+                                            <input 
+                                                type="date" 
+                                                id="date_served_{{ $report->id }}" 
+                                                name="date_served" 
+                                                class="form-control"
+                                                required
+                                            >
+                                        </div>
+
+                                        <!-- Due Date for Submission -->
+                                        <div class="form-group">
+                                            <label for="due_date_{{ $report->id }}">Due Date for Submission <span class="text-danger">*</span></label>
+                                            <input 
+                                                type="date" 
+                                                id="due_date_{{ $report->id }}" 
+                                                name="due_date" 
+                                                class="form-control"
+                                                required
+                                            >
+                                        </div>
+
+                                        <!-- Attachment -->
+                                        <div class="form-group">
+                                            <label for="attachment_{{ $report->id }}">Attachment</label>
+                                            <input 
+                                                type="file" 
+                                                id="attachment_{{ $report->id }}" 
+                                                name="attachment_path" 
+                                                class="form-control"
+                                            >
+                                            <small class="form-text text-muted">Max file size: 10MB</small>
+                                        </div>
+
+                                        <!-- Resolution (Textarea) -->
+                                        <div class="form-group">
+                                            <label for="resolution_{{ $report->id }}">Resolution</label>
+                                            <textarea 
+                                                id="resolution_{{ $report->id }}" 
+                                                name="resolution" 
+                                                class="form-control" 
+                                                rows="3" 
+                                                placeholder="Enter resolution details (optional)"
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Create NTE</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                @endforelse
             </div>
             @endif
 
